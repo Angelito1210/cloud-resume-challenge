@@ -1,0 +1,12 @@
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+terraform.tfstate*
+crash.log
+crash.*.log
+
+# Archivos grandes
+*.zip
+lambda.zip

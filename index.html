@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Mi Portfolio - Ángel Moreno</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
+    h1 { color: #0077cc; }
+    #counter { font-size: 2em; font-weight: bold; color: #333; }
+  </style>
+</head>
+<body>
+  <h1>¡Hola! Soy Ángel Moreno</h1>
+  <p>Este es mi Cloud Resume Challenge desplegado con Terraform en AWS.</p>
+  <p>Visitantes totales: <span id="counter">Cargando...</span></p>
+
+  <script>
+    async function getVisitorCount() {
+      try {
+        const response = await fetch("https://62bz6b6vla7o4ix6g4sjvc7f4e0gugnp.lambda-url.eu-west-1.on.aws/");
+        const data = await response.json();
+        document.getElementById("counter").textContent = data.count;
+      } catch (error) {
+        document.getElementById("counter").textContent = "Error";
+      }
+    }
+    window.onload = getVisitorCount;
+  </script>
+</body>
+</html>
