@@ -43,6 +43,8 @@ resource "aws_s3_bucket_policy" "resume" {
       Resource  = "${aws_s3_bucket.resume.arn}/*"
     }]
   })
+
+  depends_on = [aws_s3_bucket_public_access_block.resume]
 }
 
 resource "aws_s3_object" "index" {
@@ -130,9 +132,8 @@ resource "aws_lambda_function" "visitor_counter" {
   source_code_hash = filebase64sha256("lambda.zip")
 }
 
-# Lambda URL (más simple que API Gateway)
 resource "aws_lambda_function_url" "counter_url" {
-  function_name = aws_lambda_function.visitor_counter.function_name
+  function_name      = aws_lambda_function.visitor_counter.function_name
   authorization_type = "NONE"
 
   cors {
@@ -140,14 +141,6 @@ resource "aws_lambda_function_url" "counter_url" {
     allow_methods = ["GET"]
     allow_headers = ["*"]
   }
-}
-
-output "website_url" {
-  value = "https://${aws_cloudfront_distribution.resume.domain_name}"
-}
-
-output "api_url" {
-  value = aws_lambda_function_url.counter_url.function_url
 }
 
 # ==================== TERRAFORM REMOTE STATE ====================
@@ -180,15 +173,12 @@ resource "aws_dynamodb_table" "terraform_lock" {
 }
 
 # ==================== GITHUB ACTIONS ROLE (OIDC) ====================
-
-# OIDC Provider de GitHub (solo se crea una vez)
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
 }
 
-# IAM Role que GitHub Actions podrá asumir
 resource "aws_iam_role" "github_actions_role" {
   name = "github-actions-role"
 
@@ -210,8 +200,15 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-# Permisos para que el role pueda desplegar todo (S3, CloudFront, Lambda, DynamoDB...)
 resource "aws_iam_role_policy_attachment" "github_actions_full_access" {
   role       = aws_iam_role.github_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+output "website_url" {
+  value = "https://${aws_cloudfront_distribution.resume.domain_name}"
+}
+
+output "api_url" {
+  value = aws_lambda_function_url.counter_url.function_url
 }
