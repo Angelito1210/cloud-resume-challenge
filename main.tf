@@ -149,3 +149,69 @@ output "website_url" {
 output "api_url" {
   value = aws_lambda_function_url.counter_url.function_url
 }
+
+# ==================== TERRAFORM REMOTE STATE ====================
+resource "random_string" "tfstate_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+
+resource "aws_s3_bucket" "tfstate" {
+  bucket = "angel-tfstate-${random_string.tfstate_suffix.result}"
+}
+
+resource "aws_s3_bucket_versioning" "tfstate" {
+  bucket = aws_s3_bucket.tfstate.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_dynamodb_table" "terraform_lock" {
+  name         = "terraform-lock"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}
+
+# ==================== GITHUB ACTIONS ROLE (OIDC) ====================
+
+# OIDC Provider de GitHub (solo se crea una vez)
+resource "aws_iam_openid_connect_provider" "github" {
+  url             = "https://token.actions.githubusercontent.com"
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+}
+
+# IAM Role que GitHub Actions podrá asumir
+resource "aws_iam_role" "github_actions_role" {
+  name = "github-actions-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.github.arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          "token.actions.githubusercontent.com:sub" = "repo:Angelito1210/cloud-resume-challenge:ref:refs/heads/main"
+        }
+      }
+    }]
+  })
+}
+
+# Permisos para que el role pueda desplegar todo (S3, CloudFront, Lambda, DynamoDB...)
+resource "aws_iam_role_policy_attachment" "github_actions_full_access" {
+  role       = aws_iam_role.github_actions_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
