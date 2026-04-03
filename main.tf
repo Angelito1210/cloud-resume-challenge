@@ -93,7 +93,7 @@ resource "aws_cloudfront_distribution" "resume" {
 
 # ==================== BACKEND (SIMPLIFICADO) ====================
 resource "aws_dynamodb_table" "visitors" {
-  name         = "visitors"
+  name         = "visitors-v2"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "id"
 
@@ -104,7 +104,7 @@ resource "aws_dynamodb_table" "visitors" {
 }
 
 resource "aws_iam_role" "lambda_role" {
-  name = "lambda_role"
+  name = "lambda_role-v2"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -162,7 +162,7 @@ resource "aws_s3_bucket_versioning" "tfstate" {
 }
 
 resource "aws_dynamodb_table" "terraform_lock" {
-  name         = "terraform-lock"
+  name         = "terraform-lock-v2"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -180,7 +180,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 resource "aws_iam_role" "github_actions_role" {
-  name = "github-actions-role"
+  name = "github-actions-role-v2"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
