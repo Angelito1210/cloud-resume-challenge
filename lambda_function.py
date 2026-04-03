@@ -2,7 +2,7 @@ import json
 import boto3
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('visitors')
+table = dynamodb.Table('visitors-v2')   # ← Aquí estaba el error
 
 def lambda_handler(event, context):
     response = table.update_item(
@@ -12,9 +12,7 @@ def lambda_handler(event, context):
         ExpressionAttributeValues={':inc': 1},
         ReturnValues='UPDATED_NEW'
     )
-    
     count = response['Attributes']['count']
-    
     return {
         'statusCode': 200,
         'headers': {
