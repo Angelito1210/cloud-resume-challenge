@@ -2,17 +2,6 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-# ==================== BACKEND REMOTO ====================
-terraform {
-  backend "s3" {
-    bucket         = "angel-tfstate-sep11lwh"   # ← cambia si tu bucket tfstate tiene otro nombre
-    key            = "cloud-resume-challenge/terraform.tfstate"
-    region         = "eu-west-1"
-    dynamodb_table = "terraform-lock"
-    encrypt        = true
-  }
-}
-
 # ==================== FRONTEND ====================
 resource "random_string" "suffix" {
   length  = 8
