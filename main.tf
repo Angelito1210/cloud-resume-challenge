@@ -185,6 +185,9 @@ resource "aws_iam_role" "github_actions_role" {
       }
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
         StringLike = {
           "token.actions.githubusercontent.com:sub" = "repo:Angelito1210/cloud-resume-challenge:*"
         }
@@ -192,7 +195,6 @@ resource "aws_iam_role" "github_actions_role" {
     }]
   })
 }
-
 resource "aws_iam_role_policy_attachment" "github_actions_full_access" {
   role       = aws_iam_role.github_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
