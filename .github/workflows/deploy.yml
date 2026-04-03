@@ -1,17 +1,13 @@
 name: Deploy to AWS
-
 on:
   push:
     branches: [ main ]
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     permissions:
       id-token: write
       contents: read
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -19,7 +15,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::727544051138:role/github-actions-role
+          role-to-assume: arn:aws:iam::727544051138:role/github-actions-role-v2   # ← ESTO ERA EL ERROR
           aws-region: eu-west-1
 
       - name: Setup Terraform
@@ -35,5 +31,4 @@ jobs:
         run: terraform plan
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main'
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve   # quitamos el if redundante
