@@ -15,7 +15,7 @@
 <script>
   async function getVisitorCount() {
     try {
-      const response = await fetch("https://fim4ame7ryjeqwwpzedf6smhey0vbvot.lambda-url.eu-west-1.on.aws/");
+      const response = await fetch("https://q7czpa4y5vn3uwyejrkb54hjvq0rlkvb.lambda-url.eu-west-1.on.aws/");
       const data = await response.json();
       document.getElementById("counter").textContent = data.count;
     } catch (error) {
