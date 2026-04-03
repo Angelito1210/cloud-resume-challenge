@@ -2,17 +2,6 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-# ==================== BACKEND REMOTO (S3 + DynamoDB) ====================
-terraform {
-  backend "s3" {
-    bucket         = "angel-tfstate-xabr8taj"   # ← cámbialo si cambias el sufijo del bucket
-    key            = "cloud-resume-challenge/terraform.tfstate"
-    region         = "eu-west-1"
-    dynamodb_table = "terraform-lock-v2"
-    encrypt        = true
-  }
-}
-
 # ==================== FRONTEND ====================
 resource "random_string" "suffix" {
   length  = 8
@@ -138,7 +127,7 @@ resource "aws_lambda_function" "visitor_counter" {
 }
 
 resource "aws_lambda_function_url" "counter_url" {
-  function_name    = aws_lambda_function.visitor_counter.function_name
+  function_name      = aws_lambda_function.visitor_counter.function_name
   authorization_type = "NONE"
 
   cors {
@@ -148,7 +137,7 @@ resource "aws_lambda_function_url" "counter_url" {
   }
 }
 
-# ==================== TERRAFORM REMOTE STATE LOCK ====================
+# ==================== TERRAFORM REMOTE STATE LOCK (sin backend remoto por ahora) ====================
 resource "random_string" "tfstate_suffix" {
   length  = 8
   special = false
@@ -177,7 +166,7 @@ resource "aws_dynamodb_table" "terraform_lock" {
   }
 }
 
-# ==================== GITHUB ACTIONS ROLE (OIDC - FIXEADO) ====================
+# ==================== GITHUB ACTIONS ROLE (OIDC - FIJADO) ====================
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
