@@ -13,18 +13,18 @@
   <p>Este es mi Cloud Resume Challenge desplegado con Terraform en AWS.</p>
   <p>Visitantes totales: <span id="counter">Cargando...</span></p>
 
-  <script>
-    async function getVisitorCount() {
-      try {
-        const response = await fetch("https://77755j7oiuzlkcvrqo7awj46b40avbwy.lambda-url.eu-west-1.on.aws/");
-        const data = await response.json();
-        document.getElementById("counter").textContent = data.count;
-      } catch (error) {
-        document.getElementById("counter").textContent = "Error";
-        console.error(error);
-      }
+<script>
+  async function getVisitorCount() {
+    try {
+      const response = await fetch("https://fim4ame7ryjeqwwpzedf6smhey0vbvot.lambda-url.eu-west-1.on.aws/");
+      const data = await response.json();
+      document.getElementById("counter").textContent = data.count;
+    } catch (error) {
+      document.getElementById("counter").textContent = "Error";
+      console.error(error);
     }
-    window.onload = getVisitorCount;
-  </script>
+  }
+  window.onload = getVisitorCount;
+</script>
 </body>
 </html>
