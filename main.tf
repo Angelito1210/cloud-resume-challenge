@@ -2,13 +2,13 @@ provider "aws" {
   region = "eu-west-1"
 }
 
-# ==================== BACKEND REMOTO (S3 + DynamoDB) ====================
+# ==================== BACKEND REMOTO ====================
 terraform {
   backend "s3" {
-    bucket         = "angel-tfstate-dmadw2i1"   # cambia si tu bucket tfstate tiene otro nombre
+    bucket         = "angel-tfstate-sep11lwh"   # ← cambia si tu bucket tfstate tiene otro nombre
     key            = "cloud-resume-challenge/terraform.tfstate"
     region         = "eu-west-1"
-    dynamodb_table = "terraform-lock-v2"
+    dynamodb_table = "terraform-lock"
     encrypt        = true
   }
 }
@@ -207,24 +207,22 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-# Política mínima (mejor que AdministratorAccess)
+# Política mínima (mucho mejor que AdministratorAccess)
 resource "aws_iam_role_policy" "github_actions_minimal" {
   role = aws_iam_role.github_actions_role.name
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:*",
-          "cloudfront:*",
-          "lambda:*",
-          "dynamodb:*",
-          "iam:PassRole"
-        ]
-        Resource = "*"
-      }
-    ]
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "s3:*",
+        "cloudfront:*",
+        "lambda:*",
+        "dynamodb:*",
+        "iam:PassRole"
+      ]
+      Resource = "*"
+    }]
   })
 }
 
