@@ -2,6 +2,17 @@ provider "aws" {
   region = "eu-west-1"
 }
 
+# ==================== BACKEND REMOTO (S3 + DynamoDB) ====================
+terraform {
+  backend "s3" {
+    bucket         = "angel-tfstate-dmadw2i1"   # cambia si tu bucket tfstate tiene otro nombre
+    key            = "cloud-resume-challenge/terraform.tfstate"
+    region         = "eu-west-1"
+    dynamodb_table = "terraform-lock-v2"
+    encrypt        = true
+  }
+}
+
 # ==================== FRONTEND ====================
 resource "random_string" "suffix" {
   length  = 8
@@ -89,7 +100,7 @@ resource "aws_cloudfront_distribution" "resume" {
 
 # ==================== BACKEND (Lambda + DynamoDB) ====================
 resource "aws_dynamodb_table" "visitors" {
-  name         = "visitors-v2"
+  name         = "visitors"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "id"
 
@@ -100,7 +111,7 @@ resource "aws_dynamodb_table" "visitors" {
 }
 
 resource "aws_iam_role" "lambda_role" {
-  name = "lambda_role-v2"
+  name = "lambda_role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -137,7 +148,7 @@ resource "aws_lambda_function_url" "counter_url" {
   }
 }
 
-# ==================== TERRAFORM REMOTE STATE LOCK (sin backend remoto por ahora) ====================
+# ==================== TERRAFORM STATE LOCK ====================
 resource "random_string" "tfstate_suffix" {
   length  = 8
   special = false
@@ -156,7 +167,7 @@ resource "aws_s3_bucket_versioning" "tfstate" {
 }
 
 resource "aws_dynamodb_table" "terraform_lock" {
-  name         = "terraform-lock-v2"
+  name         = "terraform-lock"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -166,7 +177,7 @@ resource "aws_dynamodb_table" "terraform_lock" {
   }
 }
 
-# ==================== GITHUB ACTIONS ROLE (OIDC - FIJADO) ====================
+# ==================== GITHUB ACTIONS ROLE (OIDC + PERMISOS MÍNIMOS) ====================
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -174,12 +185,12 @@ resource "aws_iam_openid_connect_provider" "github" {
 }
 
 resource "aws_iam_role" "github_actions_role" {
-  name = "github-actions-role-v2"
+  name = "github-actions-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = {
         Federated = aws_iam_openid_connect_provider.github.arn
       }
@@ -196,10 +207,25 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-
-resource "aws_iam_role_policy_attachment" "github_actions_full_access" {
-  role       = aws_iam_role.github_actions_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+# Política mínima (mejor que AdministratorAccess)
+resource "aws_iam_role_policy" "github_actions_minimal" {
+  role = aws_iam_role.github_actions_role.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:*",
+          "cloudfront:*",
+          "lambda:*",
+          "dynamodb:*",
+          "iam:PassRole"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
 }
 
 # ==================== OUTPUTS ====================
