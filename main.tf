@@ -2,6 +2,17 @@ provider "aws" {
   region = "eu-west-1"
 }
 
+# ==================== BACKEND REMOTO (S3 + DynamoDB) ====================
+terraform {
+  backend "s3" {
+    bucket         = "angel-tfstate-xabr8taj"   # ← cámbialo si cambias el sufijo del bucket
+    key            = "cloud-resume-challenge/terraform.tfstate"
+    region         = "eu-west-1"
+    dynamodb_table = "terraform-lock-v2"
+    encrypt        = true
+  }
+}
+
 # ==================== FRONTEND ====================
 resource "random_string" "suffix" {
   length  = 8
@@ -15,15 +26,13 @@ resource "aws_s3_bucket" "resume" {
 
 resource "aws_s3_bucket_website_configuration" "resume" {
   bucket = aws_s3_bucket.resume.id
-
   index_document {
     suffix = "index.html"
   }
 }
 
 resource "aws_s3_bucket_public_access_block" "resume" {
-  bucket = aws_s3_bucket.resume.id
-
+  bucket                  = aws_s3_bucket.resume.id
   block_public_acls       = false
   block_public_policy     = false
   ignore_public_acls      = false
@@ -32,7 +41,6 @@ resource "aws_s3_bucket_public_access_block" "resume" {
 
 resource "aws_s3_bucket_policy" "resume" {
   bucket = aws_s3_bucket.resume.id
-
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -43,7 +51,6 @@ resource "aws_s3_bucket_policy" "resume" {
       Resource  = "${aws_s3_bucket.resume.arn}/*"
     }]
   })
-
   depends_on = [aws_s3_bucket_public_access_block.resume]
 }
 
@@ -91,7 +98,7 @@ resource "aws_cloudfront_distribution" "resume" {
   }
 }
 
-# ==================== BACKEND (SIMPLIFICADO) ====================
+# ==================== BACKEND (Lambda + DynamoDB) ====================
 resource "aws_dynamodb_table" "visitors" {
   name         = "visitors-v2"
   billing_mode = "PAY_PER_REQUEST"
@@ -109,11 +116,9 @@ resource "aws_iam_role" "lambda_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "lambda.amazonaws.com"
-      }
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
 }
@@ -133,7 +138,7 @@ resource "aws_lambda_function" "visitor_counter" {
 }
 
 resource "aws_lambda_function_url" "counter_url" {
-  function_name      = aws_lambda_function.visitor_counter.function_name
+  function_name    = aws_lambda_function.visitor_counter.function_name
   authorization_type = "NONE"
 
   cors {
@@ -143,7 +148,7 @@ resource "aws_lambda_function_url" "counter_url" {
   }
 }
 
-# ==================== TERRAFORM REMOTE STATE ====================
+# ==================== TERRAFORM REMOTE STATE LOCK ====================
 resource "random_string" "tfstate_suffix" {
   length  = 8
   special = false
@@ -172,7 +177,7 @@ resource "aws_dynamodb_table" "terraform_lock" {
   }
 }
 
-# ==================== GITHUB ACTIONS ROLE (OIDC) ====================
+# ==================== GITHUB ACTIONS ROLE (OIDC - FIXEADO) ====================
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -185,15 +190,14 @@ resource "aws_iam_role" "github_actions_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = {
         Federated = aws_iam_openid_connect_provider.github.arn
       }
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
-        StringEquals = {
-          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
-          "token.actions.githubusercontent.com:sub" = "repo:Angelito1210/cloud-resume-challenge:ref:refs/heads/main"
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:Angelito1210/cloud-resume-challenge:*"
         }
       }
     }]
@@ -205,6 +209,7 @@ resource "aws_iam_role_policy_attachment" "github_actions_full_access" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
+# ==================== OUTPUTS ====================
 output "website_url" {
   value = "https://${aws_cloudfront_distribution.resume.domain_name}"
 }
