@@ -87,7 +87,7 @@ resource "aws_cloudfront_distribution" "resume" {
   }
 }
 
-# ==================== BACKEND (Lambda + DynamoDB) ====================
+# ==================== BACKEND ====================
 resource "aws_dynamodb_table" "visitors" {
   name         = "visitors"
   billing_mode = "PAY_PER_REQUEST"
@@ -137,7 +137,7 @@ resource "aws_lambda_function_url" "counter_url" {
   }
 }
 
-# ==================== TERRAFORM STATE LOCK ====================
+# ==================== STATE LOCK ====================
 resource "random_string" "tfstate_suffix" {
   length  = 8
   special = false
@@ -166,7 +166,7 @@ resource "aws_dynamodb_table" "terraform_lock" {
   }
 }
 
-# ==================== GITHUB ACTIONS ROLE (OIDC + PERMISOS MÍNIMOS) ====================
+# ==================== GITHUB ACTIONS OIDC (CORRECTO) ====================
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
