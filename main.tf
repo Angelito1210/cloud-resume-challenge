@@ -179,7 +179,7 @@ resource "aws_iam_role" "github_actions_role" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect    = "Allow"
+      Effect = "Allow"
       Principal = {
         Federated = aws_iam_openid_connect_provider.github.arn
       }
@@ -195,6 +195,8 @@ resource "aws_iam_role" "github_actions_role" {
     }]
   })
 }
+
+
 resource "aws_iam_role_policy_attachment" "github_actions_full_access" {
   role       = aws_iam_role.github_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
