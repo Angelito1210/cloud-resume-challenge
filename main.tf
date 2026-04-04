@@ -43,6 +43,7 @@ resource "aws_s3_bucket_policy" "resume" {
   depends_on = [aws_s3_bucket_public_access_block.resume]
 }
 
+# ← NUEVO: Terraform inyecta automáticamente la URL de la Lambda
 resource "aws_s3_object" "index" {
   bucket       = aws_s3_bucket.resume.id
   key          = "index.html"
@@ -50,7 +51,6 @@ resource "aws_s3_object" "index" {
   content_type = "text/html"
   etag         = filemd5("index.html")
 }
-
 resource "aws_cloudfront_distribution" "resume" {
   origin {
     domain_name = aws_s3_bucket.resume.bucket_regional_domain_name
@@ -117,6 +117,11 @@ resource "aws_iam_role_policy_attachment" "lambda_dynamodb" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
 resource "aws_lambda_function" "visitor_counter" {
   filename         = "lambda.zip"
   function_name    = "visitor_counter"
@@ -131,10 +136,21 @@ resource "aws_lambda_function_url" "counter_url" {
   authorization_type = "NONE"
 
   cors {
-    allow_origins = ["*"]
-    allow_methods = ["GET"]
-    allow_headers = ["*"]
+    allow_origins     = ["*"]
+    allow_methods     = ["GET"]
+    allow_headers     = ["*"]
+    expose_headers    = ["*"]
+    allow_credentials = false
   }
+}
+
+# ← ESTE ERA EL FALLO FINAL (403 Forbidden)
+resource "aws_lambda_permission" "allow_function_url" {
+  statement_id           = "AllowPublicFunctionUrl"
+  action                 = "lambda:InvokeFunctionUrl"
+  function_name          = aws_lambda_function.visitor_counter.function_name
+  principal              = "*"
+  function_url_auth_type = "NONE"
 }
 
 # ==================== STATE LOCK ====================
@@ -166,7 +182,7 @@ resource "aws_dynamodb_table" "terraform_lock" {
   }
 }
 
-# ==================== GITHUB ACTIONS OIDC (CORRECTO) ====================
+# ==================== GITHUB ACTIONS OIDC ====================
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -180,10 +196,8 @@ resource "aws_iam_role" "github_actions_role" {
     Version = "2012-10-17"
     Statement = [{
       Effect    = "Allow"
-      Principal = {
-        Federated = aws_iam_openid_connect_provider.github.arn
-      }
-      Action = "sts:AssumeRoleWithWebIdentity"
+      Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
@@ -196,7 +210,6 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
-# Política mínima (mucho mejor que AdministratorAccess)
 resource "aws_iam_role_policy" "github_actions_minimal" {
   role = aws_iam_role.github_actions_role.name
   policy = jsonencode({
@@ -208,10 +221,25 @@ resource "aws_iam_role_policy" "github_actions_minimal" {
         "cloudfront:*",
         "lambda:*",
         "dynamodb:*",
-        "iam:PassRole"
+        "iam:PassRole",
+        "iam:CreateRole",
+        "iam:DeleteRole",
+        "iam:AttachRolePolicy",
+        "iam:PutRolePolicy",
+        "iam:CreateOpenIDConnectProvider",
+        "iam:DeleteOpenIDConnectProvider"
       ]
       Resource = "*"
     }]
+  })
+}
+resource "aws_dynamodb_table_item" "initial_visitor_count" {
+  table_name = aws_dynamodb_table.visitors.name
+  hash_key   = "id"
+
+  item = jsonencode({
+    id    = { S = "total" }
+    count = { N = "0" }
   })
 }
 
