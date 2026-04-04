@@ -12,11 +12,10 @@ def lambda_handler(event, context):
         ExpressionAttributeValues={':inc': 1},
         ReturnValues='UPDATED_NEW'
     )
-    count = response['Attributes']['count']
+    count = int(response['Attributes']['count'])
+
     return {
         'statusCode': 200,
-        'headers': {
-            'Content-Type': 'application/json'
-        },
-        'body': json.dumps({'count': int(count)})
+        'headers': { 'Content-Type': 'application/json' },
+        'body': json.dumps({'count': count})
     }
