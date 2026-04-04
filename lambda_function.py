@@ -2,7 +2,7 @@ import json
 import boto3
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('visitors-v2')   # ← Aquí estaba el error
+table = dynamodb.Table('visitors')
 
 def lambda_handler(event, context):
     response = table.update_item(
