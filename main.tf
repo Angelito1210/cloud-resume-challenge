@@ -44,13 +44,16 @@ resource "aws_s3_bucket_policy" "resume" {
 }
 
 # ← NUEVO: Terraform inyecta automáticamente la URL de la Lambda
+
 resource "aws_s3_object" "index" {
   bucket       = aws_s3_bucket.resume.id
   key          = "index.html"
-  source       = "index.html"
+  content      = templatefile("${path.module}/index.html.tpl", {
+    api_url = aws_lambda_function_url.counter_url.function_url
+  })
   content_type = "text/html"
-  etag         = filemd5("index.html")
 }
+
 resource "aws_cloudfront_distribution" "resume" {
   origin {
     domain_name = aws_s3_bucket.resume.bucket_regional_domain_name
@@ -223,26 +226,18 @@ resource "aws_iam_role_policy" "github_actions_minimal" {
         "lambda:*",
         "dynamodb:*",
         "iam:PassRole",
-        "iam:CreateRole",
-        "iam:DeleteRole",
-        "iam:AttachRolePolicy",
-        "iam:PutRolePolicy",
-        "iam:CreateOpenIDConnectProvider",
-        "iam:DeleteOpenIDConnectProvider",
         "iam:GetRole",
         "iam:GetRolePolicy",
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies",
         "iam:ListInstanceProfilesForRole",
-        "iam:GetOpenIDConnectProvider",
-        "iam:TagRole",
-        "iam:UntagRole",
-        "iam:DetachRolePolicy"
+        "iam:GetOpenIDConnectProvider"
       ]
       Resource = "*"
     }]
   })
 }
+
 
 resource "aws_dynamodb_table_item" "initial_visitor_count" {
   table_name = aws_dynamodb_table.visitors.name
