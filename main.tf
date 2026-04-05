@@ -210,6 +210,7 @@ resource "aws_iam_role" "github_actions_role" {
   })
 }
 
+
 resource "aws_iam_role_policy" "github_actions_minimal" {
   role = aws_iam_role.github_actions_role.name
   policy = jsonencode({
@@ -227,12 +228,22 @@ resource "aws_iam_role_policy" "github_actions_minimal" {
         "iam:AttachRolePolicy",
         "iam:PutRolePolicy",
         "iam:CreateOpenIDConnectProvider",
-        "iam:DeleteOpenIDConnectProvider"
+        "iam:DeleteOpenIDConnectProvider",
+        "iam:GetRole",
+        "iam:GetRolePolicy",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListInstanceProfilesForRole",
+        "iam:GetOpenIDConnectProvider",
+        "iam:TagRole",
+        "iam:UntagRole",
+        "iam:DetachRolePolicy"
       ]
       Resource = "*"
     }]
   })
 }
+
 resource "aws_dynamodb_table_item" "initial_visitor_count" {
   table_name = aws_dynamodb_table.visitors.name
   hash_key   = "id"
