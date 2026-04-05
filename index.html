@@ -1,17 +1,66 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mi Portfolio - Ángel Moreno</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f4f4f4; }
-    h1 { color: #0077cc; }
-    #counter { font-size: 2em; font-weight: bold; color: #333; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      background-color: #f4f7f6; 
+      color: #333; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      margin: 0; 
+    }
+    .container { 
+      background: white; 
+      padding: 40px 50px; 
+      border-radius: 12px; 
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
+      text-align: center;
+      max-width: 500px;
+    }
+    h1 { 
+      color: #232F3E; /* AWS Navy */
+      margin-top: 0;
+    }
+    h1 span {
+      color: #FF9900; /* AWS Orange */
+    }
+    p { 
+      font-size: 1.1em; 
+      line-height: 1.5; 
+      color: #555;
+    }
+    .counter-box { 
+      margin-top: 30px; 
+      padding: 20px; 
+      background: #fafafa; 
+      border-radius: 8px; 
+      border: 1px solid #eaeaea; 
+    }
+    #counter { 
+      display: block;
+      font-size: 3em; 
+      font-weight: bold; 
+      color: #FF9900; 
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
-  <h1>¡Hola! Soy Ángel Moreno</h1>
-  <p>Este es mi Cloud Resume Challenge desplegado con Terraform en AWS.</p>
-  <p>Visitantes totales: <span id="counter">Cargando...</span></p>
+  <div class="container">
+    <h1>Ángel <span>Moreno</span></h1>
+    <p>Este es mi <strong>Cloud Resume Challenge</strong>.<br>Infraestructura desplegada al 100% con Terraform en AWS y CI/CD con GitHub Actions.</p>
+    
+    <div class="counter-box">
+      <span>Visitas totales:</span>
+      <span id="counter">...</span>
+    </div>
+  </div>
 
   <script>
     async function getVisitorCount() {
